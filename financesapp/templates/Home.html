@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="../static/style.css">
+    <title>Finance Tracker</title>
+    <script>
+        window.onload = function () {
+            // Get all the amount cells
+            var amountCells = document.querySelectorAll('td:nth-child(2)');
+
+            // Calculate the total
+            var total = 0;
+            amountCells.forEach(function (cell) {
+                var amount = parseFloat(cell.textContent.replace('$', '')) || 0;
+                total += amount;
+            });
+
+            // Display the total in the last row of the table
+            var totalCell = document.querySelector('tr:last-child td:last-child');
+            totalCell.textContent = '$' + total.toFixed(2);
+        }; 
+           // display toggle menu
+        function toggleMenu() {
+        var dropdownMenu = document.getElementById('dropdownMenu');
+        dropdownMenu.style.display = (dropdownMenu.style.display === 'block') ? 'none' : 'block';
+}
+
+    </script>
+    <header>
+            <div class="menu-button" onclick="toggleMenu()" >
+                <div class="line"></div>
+                <div class="line"></div>
+                <div class="line"></div>
+            </div>
+            <h1>Finance Tracker</h1>
+            <div class="dropdown-menu" id="dropdownMenu">
+                <button class="dropdown-item" onclick="location.href=''">Account1</button>
+                <button class="dropdown-item" onclick="location.href=''">Account2</button>
+            </div>
+    </header>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="button-container">
+                <h5><button class="button" type="button" onclick="openAccountForm()">+Account</button></h5>
+                <h5><button class="button" type="button" onclick="location.href='settings.html'">Settings</button></h5>
+            </div>
+        </div>
+
+        <!-- Main Transaction/Expense Grid Body -->
+        <div class="mainGrid" id="transactionsGrid">
+          {% set transactionsTotal = 0.00 %}
+          {% for transaction in storedData["Transactions"] %}
+            <div class="mainGridRow"><div class="mainGridHiddenID">{{ transaction["id"] }}</div><div class="mainGridType">{{ transaction["type"] }}</div><div class="mainGridAmount">{{ transaction["amount"] }}</div><div class="mainGridDelete"><img class="trashcan" src="../static/images/trashcan.png" alt="delete"></div></div>
+            {% set transactionsTotal = transactionsTotal + transaction["amount"] %}
+            {% if loop.last %}  
+            <div class="mainGridRow"><div class="mainGridTotalTitle">Total:</div><div class="mainGridTotalAmount">{{ transactionsTotal }}</div></div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        <div class="settings">
+            <div class="button-container">
+                <h5><button class="button" type="button" onclick="toggleDeleteTransactions()">-Transaction</button></h5>
+                <h5><button class="button" type="button" onclick="openTransactionForm()">+Transaction</button></h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button class="footer-button" type="button" onclick="location.href='accountdetails.html'" id="accountdetails" >Account Details</button>
+        <button class="footer-button" type="button" onclick="location.href='balanceoverview.html'" id="balanceoverview" >Balance Overview</button>
+        <button class="footer-button" type="button" onclick="location.href='graphicaloverview.html'" id="graphicaloverview" >Graphical Overview</button>
+    </div>
+
+
+    <!-- Login Form Modal Content -->
+    <div id="loginForm" class="modal">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeLoginForm()">&times;</span>
+        <form action="/login" method="post">
+          <input type="text" name="username" placeholder="Username" required>
+          <input type="password" name="password" placeholder="Password" required>
+          <button type="button" onclick="openLoginForm()">Login</button>
+          <button type="button" onclick="openRegisterForm()">Create New Account</button>
+        </form>
+      </div>
+    </div>
+    <div id="registerForm" class="modal">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeRegisterForm()">&times;</span>
+        <form action="/register" method="post">
+          <input type="text" name="newUsername" id="newUsername" placeholder="Username" required>
+          <input type="password" name="newPassword" id="newPassword" placeholder="Password" required>
+          <div class="buttonCreateNewAccount"><button type="button">Create Account</button></div>
+          </form>
+      </div>
+    </div>
+
+    <!-- Create Transaction Modal Form -->
+    <div id="transactionForm" class="modal">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeTransactionForm()">&times;</span>
+        <form action="/newTransactionOrExpense" method="post">
+          <label for="amount">Amount:<input type="number" name="amount" id="amount" placeholder="0" required></label>
+          <br><label for="transactionType" id="transactionExpenseLabel">Type:
+          <select id="transactionType" name="transactionType">
+            <option value="work">Work</option>
+            <option value="gift">Gift</option>
+            <option value="accountTransfer">Account Transfer</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="expenseType" name="expenseType">
+            <option value="food">Food</option>
+            <option value="gas">Gas</option>
+            <option value="bills">Bills</option>
+            <option value="housing and accomodations">Housing</option>
+            <option value="other">Other</option>
+          </select></label>
+          <br><label for="account">Account:</label>
+          <select id="account" name="account">
+            {% for account in storedData["Accounts"] %}
+            <option value={{ account[0] }}>{{ account[0] }}</option>
+            {% endfor %}
+          </select>
+          <input type="hidden" name="toggleTransactionExpense" id="toggleTransactionExpense" value="transaction">
+          <br>Deposit<label class="switch">
+            <input type="checkbox" name="toggleTransactionExpense" id="toggleTransactionExpense" value="expense">
+            <span class="slider round"></span>
+          </label>Expense
+          <br><button type="submit" id="submitTransactionExpense" style="background-color: lightgreen;">+</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Create Account Modal Form -->
+    <div id="accountForm" class="modal">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeAccountForm()">&times;</span>
+        <form action="/newAccountFromHomePage" method="post">
+          <label for="accountName">Account Name: </label>
+          <input type="text" name="accountName" id="accountName" required>
+          <br><label for="checking">Checking<input type="radio" id="checking" name="accountType" value="checking" required>
+          </label>
+          <br><label for="saving">Saving<input type="radio" id="saving" name="accountType" value="saving" required>
+          </label>
+          <br><label for="credit">Credit<input type="radio" id="credit" name="accountType" value="credit" required>
+          </label>
+          <br><label for="initialBalance">Initial Balance: </label>
+          <input type="number" name="initialBalance" id="initialBalance" placeholder="(Optional)">
+          <button type="submit">Create Account</button>
+        </form>
+      </div>
+    </div>
+
+</body>
+<script>
+  /*$(document).ready(function(){
+    $("#registerForm").submit(function(event){
+      event.preventDefault();
+      var username = $("#newUsername").val();
+      var password = $("#newPassword").val();
+      $.ajax({
+        url: '/register',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({newUsername: username, newPassword: password}),
+        success: function(response){
+          if(response.available){
+            alert(response.message);
+            closeRegisterForm();
+            window.location.href="/";
+          } else {
+            alert(response.message);
+          }
+        }
+      });
+    });
+    openLoginForm();
+  });*/
+
+  deleteTransactionsToggled = false;
+  trashcans = document.getElementsByClassName("trashcan")
+
+  window.onload = function(){
+    //openLoginForm();
+    var transactionsAmount = {{ storedData["Transactions"] | length }};
+    //const mainGrid = document.getElementById("TransactionsGrid");
+    for(var x = 0; x < trashcans.length; x++){
+      trashcans[x].style.display="none";
+      trashcans[x].addEventListener('click', function() {
+        fetch("deleteDataByID", {
+          method:"DELETE",
+          headers: {
+            "Content-Type":"application/json"
+          },
+          body: JSON.stringify({"":""})
+        })
+        .then(response => {
+          if(response.ok){
+            console.log("Delete completed");
+            var rowToDelete = event.target.closest(".mainGridRow");
+            rowToDelete.remove();
+          } else {
+            console.error("Request failed with status: " + response.status);
+          }
+        });
+      })
+    }
+    /*for(const transaction in transactions){
+      alert(transaction)
+      mainGrid.insertBefore(makeTypeRow(transaction["type"]), mainGrid.lastElementChild);
+      mainGrid.insertBefore(makeAmountRow(transaction["amount"]), mainGrid.lastElementChild);
+    }*/
+  }
+
+  function toggleDeleteTransactions(){
+    if (deleteTransactionsToggled){
+      closeDeleteTransactions()
+    } else {
+      openDeleteTransactions()
+    }
+    deleteTransactionsToggled = !deleteTransactionsToggled
+  }
+
+  function openDeleteTransactions(){
+    for(var x = 0; x < trashcans.length; x++){
+      trashcans[x].style.display="block";
+    }
+  }
+
+  function closeDeleteTransactions(){
+    for(var x = 0; x < trashcans.length; x++){
+      trashcans[x].style.display="none";
+    }
+  }
+
+  function makeTypeRow(Data){
+    gridRowType = document.createElement("div");
+    gridRow.className = "mainGridType";
+    gridRow.innerText = Data;
+  }
+   
+  function makeAmountRow(Data){
+    gridRowAmount = document.createElement("div");
+    gridRow.className = "mainGridAmount";
+    console.log(Data)
+    gridRow.innerText = Data;
+  }
+
+  function openLoginForm() {
+    document.getElementById("loginForm").style.display = "block";
+  }
+
+  function openTransactionForm() {
+    document.getElementById("toggleTransactionExpense").addEventListener('change', function() {
+      if (this.checked){
+        document.getElementById("transactionType").style.display = "none";
+        document.getElementById("expenseType").style.display = "block";
+        document.getElementById("transactionExpenseLabel").setAttribute("for", "expenseType")
+      } else {
+        document.getElementById("expenseType").style.display = "none";
+        document.getElementById("transactionType").style.display = "block";
+        document.getElementById("transactionExpenseLabel").setAttribute("for", "transactionType")
+      }
+    })
+
+    /*document.getElementById("transactionForm").addEventListener('submit', function() {
+      event.preventDefault();
+      var transactionData = new FormData(event.target);
+
+      var       
+    });*/
+    
+    if ({{ storedData["Accounts"]|length }} == 0) {
+      alert("Error! Please create an account for transactions first.")
+    } else {
+      document.getElementById("transactionForm").style.display = "block";
+      document.getElementById("expenseType").style.display = "none";
+      document.getElementById("transactionType").style.display = "block";
+      document.getElementById("transactionExpenseLabel").setAttribute("for", "transactionType")
+    }
+
+    /*document.getElementById("transactionForm").style.display = "block";
+    document.getElementById("expenseType").style.display = "none";
+    document.getElementById("transactionType").style.display = "block";
+    document.getElementById("transactionExpenseLabel").setAttribute("for", "transactionType")*/
+    
+  }
+
+  function closeTransactionForm() {
+    document.getElementById("transactionForm").style.display = "none";
+  }
+
+  function openAccountForm(){
+    document.getElementById("accountForm").style.display = "block";
+  }
+
+  function closeAccountForm(){
+    document.getElementById("accountForm").style.display = "none";
+  }
+
+  function closeLoginForm(){
+    document.getElementById("loginForm").style.display = "none";
+  }
+
+  function openRegisterForm(){
+    document.getElementById("registerForm").style.display="block";
+  }
+
+  function closeRegisterForm(){
+    document.getElementById("registerForm").style.display = "none";
+  }
+
+</script>
+</html>

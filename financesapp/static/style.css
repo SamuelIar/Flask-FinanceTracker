@@ -1,0 +1,352 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+    min-height: 96vh;
+    background-color: #ffffff;
+    }
+
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px; 
+    }
+    
+    .menu-button {
+        cursor: pointer;
+    }
+    
+    .menu-button .line {
+        width: 40px;
+        height: 4px;
+        background-color: #333;
+        margin: 5px 3px;
+    }
+    
+    header h1 {
+        color: #33373e;
+        background-color: #abb8ce2a;
+        font-size: 3em;
+        border: 7px double #33373e;
+        padding: 5px;
+        width: 50%;
+        text-align: center;
+        margin: 0 auto; 
+    }
+    
+        .menu-button {
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+        
+        .line {
+            width: 30px;
+            height: 3px;
+            background-color: #333;
+            margin: 6px 0;
+        }
+        
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 60px; /* Adjust the distance from the top as needed */
+            left: 0;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dropdown-item {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: #fff;
+            text-align: left;
+            cursor: pointer;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f2f2f2;
+        }
+        
+    .container {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    margin: 5px;
+    }
+
+.superFlex{
+    display: flex;
+}
+
+.mainGrid{
+    display: grid;
+    width: 50%;
+    grid-auto-flow: row dense;
+    flex-grow: 0;
+    flex-shrink: 1;
+    grid-gap: 0px;
+    grid-template-columns: 90%;
+    grid-template-rows: auto minmax(min-content, min-content);
+    justify-items: stretch;
+    align-items: start;
+    border: 1px solid black;
+}
+
+.mainGridRow{
+    display: grid;
+    grid-template-columns:55% 35% auto;
+    border: 1px solid black;
+}
+
+.mainGridType{
+    grid-column-start:1;
+    grid-column-end:2;
+    padding: 0px;
+    margin: 0px;
+    border: 1px solid black;
+}
+.mainGridAmount{
+    grid-column-start:2;
+    grid-column-end:3;
+    padding: 0px;
+    margin: 0px;
+    border: 1px solid black;
+}
+
+.mainGridDelete{
+    grid-column-start:3;
+    grid-column-end:4;
+    border: 1px solid black;
+}
+
+.mainGridHiddenID{
+    display: none;
+}
+
+.mainGridTotalTitle{
+    grid-column-start:1;
+    grid-column-end:2;
+    padding: 0px;
+    margin: 0px;
+    border: 1px solid black;
+}
+.mainGridTotalAmount{
+    grid-column-start:2;
+    grid-column-end:3;
+    padding: 0px;
+    margin: 0px;
+    border: 1px solid black;
+}
+
+.trashcan{
+    display: none;
+    width: 20px;
+    height: 20px;
+}
+
+    .sidebar,
+    .settings {
+    padding: 10px;
+    }
+    
+    .sidebar,
+    .settings {
+    width: 20%;
+    background-color: #ffffff;
+    }
+    
+    .content {
+    flex: 1;
+    /* margin: 0 40px; */
+    }
+    
+    table {
+    width: 100%;
+    margin-top: 20px;
+    table-layout: fixed;
+    text-indent: center;
+    }
+    
+    .button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    }
+    
+    .button {
+    width: 250px;
+    margin-top: 0%;
+    color: rgb(255, 255, 255);
+    font-size: 20px;
+    padding: 30px 60px;
+    display: inline-block;
+    background: #33373e;
+    border: 0;
+    border-radius: 40px;
+    outline: none;
+    cursor: pointer;
+    /* margin: 5px; */
+    }
+    .button:hover{
+    background-color:rgb(65, 87, 96);
+    }
+    /* .button:visited{
+    background-color:#785353;
+    } */
+    
+    th,
+    td {
+    border: 1px solid #1c1919;
+    padding: 8px;
+    text-align: center;
+    }
+    
+    th {
+    background-color: #f2f2f2;
+    }
+    
+    .footer {
+    display: flex;
+    justify-content: space-around;
+    background-color: #f2f2f2;
+    padding: 10px;
+    }
+    
+    .footer-button {
+    color: rgb(255, 255, 255);
+    font-size: 16px;
+    padding: 30px;
+    background: #33373e;
+    border: 0;
+    border-radius: 20px;
+    outline: none;
+    cursor: pointer;
+    width: 33%;
+    }
+    .footer-button:hover{
+    background-color: rgb(65, 87, 96);
+    }
+    /* #accountdetails.active{
+        background-color: #785353;
+        color: black;
+    }
+    #balanceoverview.active{
+        background-color: #785353;
+        color: black;
+    }
+    #graphicaloverview.active{
+        background-color: #785353;
+        color: black;
+    } */
+    @media only screen and (max-width: 600px) {
+    .container {
+    flex-direction: column;
+    }
+    
+    .sidebar,
+    .settings {
+    width: 100%;
+    }
+    
+    .content {
+    margin: 0;
+    }
+    }
+
+.switch{
+    position: relative;
+    display: inline-block;
+    width: 30px;
+    height: 17px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: lightgreen;
+    transition: .4s;
+}
+
+.slider:before{
+    position: absolute;
+    content: "";
+    height: 13px;
+    width: 13px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+input:checked + .slider{
+    background-color: red;
+}
+
+input:focus + .slider{
+    box-shadow: 0 0 1px red;
+}
+
+input:checked + .slider:before{
+    transform: translateX(13px);
+}
+
+.slider.round{
+    border-radius: 17px;
+}
+
+.slider.round:before{
+    border-radius: 50%;
+}
+
+.buttonCreateNewAccount{
+    align-items: center;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content{
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 30%;
+}
+
+.close-button{
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus{
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
