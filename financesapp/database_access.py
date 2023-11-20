@@ -26,10 +26,10 @@ def storeExpense(account, amount, type):
     with psycopg2.connect(**userDatabase) as conn:
         with conn.cursor() as cur:
             queryAccountID = sql.SQL("SELECT accountID FROM Accounts WHERE accountname = %s")
-            storeTransactions = sql.SQL("INSERT INTO Transactions (accountid, amount, type) VALUES (%s, %s, %s)")
+            storeTransactions = sql.SQL("INSERT INTO Expenses (accountid, amount, type) VALUES (%s, %s, %s)")
             cur.execute(queryAccountID, (account,))
             accountID = cur.fetchall()[0]
-            cur.execute(storeTransaction, (accountID, amount, type))
+            cur.execute(storeTransactions, (accountID, amount, type))
 
 # Data Retrieval Formats of Other Script Which Uses These Functions
     '''storedData = {
@@ -75,7 +75,7 @@ def retrieveTransactions():
             returnResults = []
             for transaction in queryResults:
                 returnResults.append({
-                    "transactionid":transaction[0],
+                    "id":transaction[0],
                     "type":transaction[1],
                     "amount":transaction[2]#,
                     #"datetime":transaction[2]
@@ -96,23 +96,23 @@ def retrieveExpenses():
                 })
 
 def deleteDataByID(id, dataType):
+    print("ID: ", id)
+    print("Data Type: ", dataType)
     try:
+        print("Data Type Again: " + dataType)
         with psycopg2.connect(**userDatabase) as conn:
             with conn.cursor() as cur:
-                deleteQuery = sql.SQL("DELETE FROM %s WHERE %s=%s")
-                match dataType:
-                    case "UserAccount":
-                        cur.execute(deleteQuery, (dataType, "UserAccountID", id))
-                    case "Account":
-                        cur.execute(deleteQuery, (dataType, "AccountID", id))
-                    case "Transaction":
-                        cur.execute(deleteQuery, (dataType, "TransactionID", id))
-                    case "Expense":
-                        cur.execute(deleteQuery, (dataType, "transactionID", id))
-        return jsonify({"message":"success"}),200
+                columnName = dataType[0:-1]+"id"
+                deleteQuery = sql.SQL("DELETE FROM {} WHERE {} = %s").format(
+                    sql.Identifier(dataType),
+                    sql.Identifier(columnName)
+                )
+                cur.execute(deleteQuery, [id])
+        return "success",200
 
-    except:
-        return jsonify({"message":"Item not found"}),404
+    except Exception as e:
+        print(e)
+        return "Error ", 404
 
 def createNewAccount(name, type, balance):
     with psycopg2.connect(**userDatabase) as conn:

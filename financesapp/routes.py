@@ -76,8 +76,15 @@ def register():
 def newTransactionOrExpense():
     account = request.form["account"]
     amount = request.form['amount']
-    type = request.form['transactionType']
     transactionOrExpense = request.form.get("toggleTransactionExpense")
+    if (transactionOrExpense == None): transactionOrExpense = "transaction"
+    if (transactionOrExpense == "transaction"):
+        type = request.form['transactionType']
+    elif (transactionOrExpense == "expense"):
+        type = request.form['expenseType']
+    else:
+        print("Error: Transaction or expense of type ", transactionOrExpense)
+
     if transactionOrExpense == "transaction":
         database_access.storeTransaction(account, amount, type)
     elif transactionOrExpense == "expense":
@@ -98,4 +105,16 @@ def newAccountFromHomePage():
 
 @mainRoutes.route("/deleteDataByID", methods=["DELETE"])
 def deleteDataByID():
-    return
+    data = request.json
+    print("Got request to delete data by ID ", data["id"])
+    deleteSuccessful = database_access.deleteDataByID(data["id"], data["type"])
+    print("Delete Successful: ", deleteSuccessful)
+    print("Delete Successful[1]: ", deleteSuccessful[1])
+    print(deleteSuccessful[1] == 200)
+    if (deleteSuccessful[1] == 200):
+        print("In delete successful")
+        return jsonify({"message":"Success"}),200
+    else:
+        print(deleteSuccessful)
+        return "Error", 404
+    

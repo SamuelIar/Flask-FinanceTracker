@@ -52,12 +52,10 @@
 
         <!-- Main Transaction/Expense Grid Body -->
         <div class="mainGrid" id="transactionsGrid">
-          {% set transactionsTotal = 0.00 %}
           {% for transaction in storedData["Transactions"] %}
             <div class="mainGridRow"><div class="mainGridHiddenID">{{ transaction["id"] }}</div><div class="mainGridType">{{ transaction["type"] }}</div><div class="mainGridAmount">{{ transaction["amount"] }}</div><div class="mainGridDelete"><img class="trashcan" src="../static/images/trashcan.png" alt="delete"></div></div>
-            {% set transactionsTotal = transactionsTotal + transaction["amount"] %}
             {% if loop.last %}  
-            <div class="mainGridRow"><div class="mainGridTotalTitle">Total:</div><div class="mainGridTotalAmount">{{ transactionsTotal }}</div></div>
+            <div class="mainGridRow"><div class="mainGridTotalTitle">Total:</div><div class="mainGridTotalAmount" id="mainGridTotalAmount"></div></div>
             {% endif %}
           {% endfor %}
         </div>
@@ -125,12 +123,11 @@
             <option value={{ account[0] }}>{{ account[0] }}</option>
             {% endfor %}
           </select>
-          <input type="hidden" name="toggleTransactionExpense" id="toggleTransactionExpense" value="transaction">
           <br>Deposit<label class="switch">
             <input type="checkbox" name="toggleTransactionExpense" id="toggleTransactionExpense" value="expense">
             <span class="slider round"></span>
           </label>Expense
-          <br><button type="submit" id="submitTransactionExpense" style="background-color: lightgreen;">+</button>
+          <br><button type="submit" id="submitTransactionExpense" style="background-color: lightgreen;" onclick="updateTotal()">+</button>
         </form>
       </div>
     </div>
@@ -190,25 +187,30 @@
     //const mainGrid = document.getElementById("TransactionsGrid");
     for(var x = 0; x < trashcans.length; x++){
       trashcans[x].style.display="none";
-      trashcans[x].addEventListener('click', function() {
-        fetch("deleteDataByID", {
+      trashcans[x].addEventListener('click', function(event) {
+        var deleteID = event.target.closest(".mainGridRow").querySelector(".mainGridHiddenID").innerText;
+        fetch("/deleteDataByID", {
           method:"DELETE",
           headers: {
             "Content-Type":"application/json"
           },
-          body: JSON.stringify({"":""})
+          body: JSON.stringify({
+            "id":deleteID,
+            "type":"transactions"})
         })
         .then(response => {
           if(response.ok){
-            console.log("Delete completed");
             var rowToDelete = event.target.closest(".mainGridRow");
             rowToDelete.remove();
+            updateTotal();
           } else {
             console.error("Request failed with status: " + response.status);
+            alert("There was an error while deleting your transaction")
           }
         });
       })
     }
+    updateTotal();
     /*for(const transaction in transactions){
       alert(transaction)
       mainGrid.insertBefore(makeTypeRow(transaction["type"]), mainGrid.lastElementChild);
@@ -246,7 +248,6 @@
   function makeAmountRow(Data){
     gridRowAmount = document.createElement("div");
     gridRow.className = "mainGridAmount";
-    console.log(Data)
     gridRow.innerText = Data;
   }
 
@@ -260,19 +261,14 @@
         document.getElementById("transactionType").style.display = "none";
         document.getElementById("expenseType").style.display = "block";
         document.getElementById("transactionExpenseLabel").setAttribute("for", "expenseType")
+        this.value="expense"
       } else {
         document.getElementById("expenseType").style.display = "none";
         document.getElementById("transactionType").style.display = "block";
         document.getElementById("transactionExpenseLabel").setAttribute("for", "transactionType")
+        this.value="transaction"
       }
     })
-
-    /*document.getElementById("transactionForm").addEventListener('submit', function() {
-      event.preventDefault();
-      var transactionData = new FormData(event.target);
-
-      var       
-    });*/
     
     if ({{ storedData["Accounts"]|length }} == 0) {
       alert("Error! Please create an account for transactions first.")
@@ -282,12 +278,6 @@
       document.getElementById("transactionType").style.display = "block";
       document.getElementById("transactionExpenseLabel").setAttribute("for", "transactionType")
     }
-
-    /*document.getElementById("transactionForm").style.display = "block";
-    document.getElementById("expenseType").style.display = "none";
-    document.getElementById("transactionType").style.display = "block";
-    document.getElementById("transactionExpenseLabel").setAttribute("for", "transactionType")*/
-    
   }
 
   function closeTransactionForm() {
@@ -312,6 +302,17 @@
 
   function closeRegisterForm(){
     document.getElementById("registerForm").style.display = "none";
+  }
+
+  function updateTotal(){
+    var rowAmounts = document.getElementsByClassName("mainGridAmount");
+    var sum = 0;
+    for (var i = 0; i < rowAmounts.length; i++){
+      var intValue = parseInt(rowAmounts[i].innerText, 10);
+      sum += intValue;
+    }
+
+    document.getElementById("mainGridTotalAmount").innerText = sum;
   }
 
 </script>
