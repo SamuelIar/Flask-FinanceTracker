@@ -77,23 +77,27 @@ def retrieveTransactions():
                 returnResults.append({
                     "id":transaction[0],
                     "type":transaction[1],
-                    "amount":transaction[2]#,
-                    #"datetime":transaction[2]
+                    "amount":transaction[2],
+                    "tOrE":"t"#,
+                    #"datetime":transaction[3]
                 })
-            return returnResults
+    return returnResults
 
 def retrieveExpenses():
     with psycopg2.connect(**userDatabase) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT type, amount FROM Expenses")
+            cur.execute("SELECT expenseid, type, amount FROM Expenses")
             queryResults = cur.fetchall()
             returnResults = []
             for expense in queryResults:
                 returnResults.append({
-                    "type":expense[0],
-                    "amount":expense[1]#,
-                    #"datetime":expense[2]
+                    'id':expense[0],
+                    "type":expense[1],
+                    "amount":expense[2],
+                    "tOrE":"e"#,
+                    #"datetime":expense[3]
                 })
+    return returnResults
 
 def deleteDataByID(id, dataType):
     print("ID: ", id)

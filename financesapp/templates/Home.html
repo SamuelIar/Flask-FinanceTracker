@@ -52,8 +52,8 @@
 
         <!-- Main Transaction/Expense Grid Body -->
         <div class="mainGrid" id="transactionsGrid">
-          {% for transaction in storedData["Transactions"] %}
-            <div class="mainGridRow"><div class="mainGridHiddenID">{{ transaction["id"] }}</div><div class="mainGridType">{{ transaction["type"] }}</div><div class="mainGridAmount">{{ transaction["amount"] }}</div><div class="mainGridDelete"><img class="trashcan" src="../static/images/trashcan.png" alt="delete"></div></div>
+          {% for item in storedData["TransactionsAndExpenses"] %}
+            {% if item["tOrE"] == "t" %}<div class="mainGridRowT">{% elif item["tOrE"] == "e" %}<div class="mainGridRowE">{% endif %}<div class="mainGridHiddenID">{{ item["id"] }}</div><div class="mainGridType">{{ item["type"] }}</div><div class="mainGridAmount">{{ item["amount"] }}</div><div class="mainGridDelete"><img class="trashcan" id="{{ item["tOrE"] }}" src="../static/images/trashcan.png" alt="delete"></div></div>
             {% if loop.last %}  
             <div class="mainGridRow"><div class="mainGridTotalTitle">Total:</div><div class="mainGridTotalAmount" id="mainGridTotalAmount"></div></div>
             {% endif %}
@@ -120,7 +120,7 @@
           <br><label for="account">Account:</label>
           <select id="account" name="account">
             {% for account in storedData["Accounts"] %}
-            <option value={{ account[0] }}>{{ account[0] }}</option>
+            <option value='{{ account[0] }}'>{{ account[0] }}</option>
             {% endfor %}
           </select>
           <br>Deposit<label class="switch">
@@ -180,7 +180,6 @@
 
   deleteTransactionsToggled = false;
   trashcans = document.getElementsByClassName("trashcan")
-
   window.onload = function(){
     //openLoginForm();
     var transactionsAmount = {{ storedData["Transactions"] | length }};
@@ -188,7 +187,11 @@
     for(var x = 0; x < trashcans.length; x++){
       trashcans[x].style.display="none";
       trashcans[x].addEventListener('click', function(event) {
-        var deleteID = event.target.closest(".mainGridRow").querySelector(".mainGridHiddenID").innerText;
+        if (event.target.id=="t"){
+          var deleteID = event.target.closest(".mainGridRowT").querySelector(".mainGridHiddenID").innerText;
+        } else if (event.target.id=="e"){
+          var deleteID = event.target.closest(".mainGridRowE").querySelector(".mainGridHiddenID").innerText;
+        };
         fetch("/deleteDataByID", {
           method:"DELETE",
           headers: {
@@ -200,7 +203,11 @@
         })
         .then(response => {
           if(response.ok){
-            var rowToDelete = event.target.closest(".mainGridRow");
+            if (event.target.id=="t"){
+              var rowToDelete = event.target.closest(".mainGridRowT");
+            } else if (event.target.id=="e"){
+              var rowToDelete = event.target.closest(".mainGridRowE")
+            }
             rowToDelete.remove();
             updateTotal();
           } else {

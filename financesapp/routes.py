@@ -26,10 +26,17 @@ def home():
             "Datetime":""
         }]
     }'''
+    Accounts = database_access.retrieveAccounts()
+    Transactions = database_access.retrieveTransactions()
+    Expenses = database_access.retrieveExpenses()
+    print("Transactions Amount: ", len(Transactions))
+    print("Expenses amount: ", len(Expenses))
+
     storedData = {
-        "Accounts":database_access.retrieveAccounts(),
-        "Transactions":database_access.retrieveTransactions(),
-        "Expenses":database_access.retrieveExpenses()
+        "Accounts": Accounts,
+        "Transactions": Transactions,
+        "Expenses": Expenses,
+        "TransactionsAndExpenses": Transactions + Expenses
     }
     print("Stored Data:\n",storedData)
     transactionsAndExpenses = {}

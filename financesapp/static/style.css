@@ -96,10 +96,24 @@ body {
     border: 1px solid black;
 }
 
-.mainGridRow{
+.mainGridRowT{
     display: grid;
     grid-template-columns:55% 35% auto;
     border: 1px solid black;
+}
+
+.mainGridRowT .mainGridAmount{
+    color: green;
+}
+
+.mainGridRowE{
+    display: grid;
+    grid-template-columns:55% 35% auto;
+    border: 1px solid black;
+}
+
+.mainGridRowE .mainGridAmount{
+    color: red;
 }
 
 .mainGridType{
