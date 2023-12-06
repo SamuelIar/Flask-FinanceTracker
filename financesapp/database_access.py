@@ -13,23 +13,23 @@ userDatabase = {
 }
 
 
-def storeTransaction(account, amount, type):
+def storeTransaction(user, account, amount, type, datetime):
     with psycopg2.connect(**userDatabase) as conn:
         with conn.cursor() as cur:
-            queryAccountID = sql.SQL("SELECT accountID FROM Accounts WHERE accountname = %s")
-            storeTransaction = sql.SQL("INSERT INTO Transactions (accountid, amount, type) VALUES (%s, %s, %s)")
-            cur.execute(queryAccountID, (account,))
+            queryAccountID = sql.SQL("SELECT accountID FROM Accounts WHERE accountname = %s AND userid IN (SELECT userid FROM useraccounts WHERE username = %s)")
+            storeTransaction = sql.SQL("INSERT INTO Transactions (accountid, amount, type, datetime) VALUES (%s, %s, %s, %s)")
+            cur.execute(queryAccountID, (account,user,))
             accountID = cur.fetchall()[0]
-            cur.execute(storeTransaction, (accountID, amount, type))
+            cur.execute(storeTransaction, (accountID, amount, type, datetime))
 
-def storeExpense(account, amount, type):
+def storeExpense(user, account, amount, type, datetime):
     with psycopg2.connect(**userDatabase) as conn:
         with conn.cursor() as cur:
-            queryAccountID = sql.SQL("SELECT accountID FROM Accounts WHERE accountname = %s")
-            storeTransactions = sql.SQL("INSERT INTO Expenses (accountid, amount, type) VALUES (%s, %s, %s)")
-            cur.execute(queryAccountID, (account,))
+            queryAccountID = sql.SQL("SELECT accountID FROM Accounts WHERE accountname = %s AND userID IN (SELECT userid FROM useraccounts WHERE username = %s)")
+            storeTransactions = sql.SQL("INSERT INTO Expenses (accountid, amount, type, datetime) VALUES (%s, %s, %s, %s)")
+            cur.execute(queryAccountID, (account,user,))
             accountID = cur.fetchall()[0]
-            cur.execute(storeTransactions, (accountID, amount, type))
+            cur.execute(storeTransactions, (accountID, amount, type, datetime))
 
 # Data Retrieval Formats of Other Script Which Uses These Functions
     '''storedData = {
@@ -50,13 +50,15 @@ def storeExpense(account, amount, type):
         }]
     }'''
 
-def sortTransactionsAndExpenses():
-    return
+def retrieveAccounts(username):
+    # If no user logged in, return no data
+    if(username == None): return []
 
-def retrieveAccounts():
+    # Otherwise, retrieve data
     with psycopg2.connect(**userDatabase) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT accountName, accountType, accountBalance FROM Accounts")
+            query = sql.SQL("SELECT accountName, accountType, accountBalance FROM accounts WHERE userid IN (SELECT userid FROM useraccounts WHERE username = %s)")
+            cur.execute(query, (username,))
             queryResults = cur.fetchall()
             returnResults = []
             for account in queryResults:
@@ -67,10 +69,15 @@ def retrieveAccounts():
                 })
             return queryResults
 
-def retrieveTransactions():
+def retrieveTransactions(username):
+    # If no user logged in, return no data
+    if (username == None): return []
+    
+    # Otherwise return data
     with psycopg2.connect(**userDatabase) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT transactionid, type, amount FROM Transactions")
+            query = sql.SQL("SELECT transactionid, type, amount FROM Transactions WHERE accountid IN (SELECT accountid FROM accounts WHERE userid IN (SELECT userid FROM useraccounts WHERE username = %s))")
+            cur.execute(query, (username,))
             queryResults = cur.fetchall()
             returnResults = []
             for transaction in queryResults:
@@ -83,10 +90,15 @@ def retrieveTransactions():
                 })
     return returnResults
 
-def retrieveExpenses():
+def retrieveExpenses(username):
+    # If no user logged in, return no data
+    if (username == None): return []
+
+    # Otherwise return data
     with psycopg2.connect(**userDatabase) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT expenseid, type, amount FROM Expenses")
+            query = sql.SQL("SELECT expenseid, type, amount FROM Expenses WHERE accountid IN (SELECT accountid FROM accounts WHERE userid IN (SELECT userid FROM useraccounts WHERE username = %s))")
+            cur.execute(query, (username,))
             queryResults = cur.fetchall()
             returnResults = []
             for expense in queryResults:
@@ -100,26 +112,59 @@ def retrieveExpenses():
     return returnResults
 
 def deleteDataByID(id, dataType):
-    print("ID: ", id)
-    print("Data Type: ", dataType)
+    # THIS IS INSECURE! Vulnerable to SQL injection (or something akin to it)
+    # User could modify their webpage and send request to delete data by id for ids not
+    # available to their user account
+    # Will fix it! Later though
     try:
-        print("Data Type Again: " + dataType)
         with psycopg2.connect(**userDatabase) as conn:
             with conn.cursor() as cur:
                 columnName = dataType[0:-1]+"id"
+                # DELETE FROM (Transactions|Expenses) WHERE (transactionID|expenseID) = [expenseID]
+                # Done with .format() because psycopg2 reads %s as placeholders for data values, not SQL identifiers
+                # %s cannot be used for table and column names
                 deleteQuery = sql.SQL("DELETE FROM {} WHERE {} = %s").format(
                     sql.Identifier(dataType),
                     sql.Identifier(columnName)
                 )
-                cur.execute(deleteQuery, [id])
+                cur.execute(deleteQuery, (id,))
+        print("Data should be deleted successfully")
         return "success",200
 
     except Exception as e:
         print(e)
         return "Error ", 404
 
-def createNewAccount(name, type, balance):
+def createNewAccount(name, type, balance, username):
     with psycopg2.connect(**userDatabase) as conn:
         with conn.cursor() as cur:
-            query = sql.SQL("INSERT INTO Accounts (accountname, accounttype, accountbalance) VALUES (%s, %s, %s)")
-            cur.execute(query, (name, type, balance))
+            query = sql.SQL("SELECT userid FROM useraccounts WHERE username = %s")
+            cur.execute(query, (username,))
+            userID = cur.fetchall()[0]
+            query = sql.SQL("INSERT INTO Accounts (userid, accountname, accounttype, accountbalance) VALUES (%s, %s, %s, %s)")
+            cur.execute(query, (userID, name, type, balance))
+
+def registerNewUser(name, password):
+    with psycopg2.connect(**userDatabase) as conn:
+        with conn.cursor() as cur:
+            query = sql.SQL("SELECT * FROM useraccounts WHERE username = %s")
+            cur.execute(query, (name,))
+            if cur.fetchall():
+                return 1
+            query = sql.SQL("INSERT INTO useraccounts (username, password) VALUES (%s, %s)")
+            cur.execute(query, (name, password,))
+    return 0
+
+def authenticateUser(username, password):
+    with psycopg2.connect(**userDatabase) as conn:
+        with conn.cursor() as cur:
+            query = sql.SQL("SELECT password FROM useraccounts WHERE username = %s")
+            cur.execute(query, (username,))
+            try:
+                queryResults = cur.fetchall()[0][0]
+            except IndexError:
+                queryResults = None
+            if queryResults == password:
+                return 0
+            else:
+                return 1

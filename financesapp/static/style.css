@@ -116,6 +116,12 @@ body {
     color: red;
 }
 
+.mainGridRowFinal{
+    display: grid;
+    grid-template-columns: 55% 35% auto;
+    border: 1px solid black;
+}
+
 .mainGridType{
     grid-column-start:1;
     grid-column-end:2;

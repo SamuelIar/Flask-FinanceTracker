@@ -20,7 +20,7 @@ def registerNewUser(username, password):
 
     return
 
-def checkUserLogin(username, password):
+def authenticateUser(username, password):
 
     try:
         conn = psycopg2.connect(**dbParams)

@@ -53,14 +53,20 @@
         <!-- Main Transaction/Expense Grid Body -->
         <div class="mainGrid" id="transactionsGrid">
           {% for item in storedData["TransactionsAndExpenses"] %}
-            {% if item["tOrE"] == "t" %}<div class="mainGridRowT">{% elif item["tOrE"] == "e" %}<div class="mainGridRowE">{% endif %}<div class="mainGridHiddenID">{{ item["id"] }}</div><div class="mainGridType">{{ item["type"] }}</div><div class="mainGridAmount">{{ item["amount"] }}</div><div class="mainGridDelete"><img class="trashcan" id="{{ item["tOrE"] }}" src="../static/images/trashcan.png" alt="delete"></div></div>
+            {% if item["tOrE"] == "t" %}<div class="mainGridRowT">{% elif item["tOrE"] == "e" %}<div class="mainGridRowE">{% endif %}<div class="mainGridHiddenID">{{ item["id"] }}</div><div class="mainGridType">{{ item["type"] }}</div><div class="mainGridAmount" id={% if item["tOrE"] == "t" %}"t"{% elif item["tOrE"] == "e" %}"e"{% endif %}>{{ item["amount"] }}</div><div class="mainGridDelete"><img class="trashcan" id="{{ item["tOrE"] }}" src="../static/images/trashcan.png" alt="delete"></div></div>
             {% if loop.last %}  
-            <div class="mainGridRow"><div class="mainGridTotalTitle">Total:</div><div class="mainGridTotalAmount" id="mainGridTotalAmount"></div></div>
+            <div class="mainGridRowFinal"><div class="mainGridTotalTitle">Total:</div><div class="mainGridTotalAmount" id="mainGridTotalAmount"></div></div>
             {% endif %}
           {% endfor %}
         </div>
         <div class="settings">
             <div class="button-container">
+                {% if 'username' in session %}
+                <button type="button" onclick="logout()">Log Out</button>
+                {% else %}
+                <button type="button" onclick="openLoginForm()">Login</button>
+                <button type="button" onclick="openRegisterForm()">Register</button>
+                {% endif %}
                 <h5><button class="button" type="button" onclick="toggleDeleteTransactions()">-Transaction</button></h5>
                 <h5><button class="button" type="button" onclick="openTransactionForm()">+Transaction</button></h5>
             </div>
@@ -75,25 +81,37 @@
 
 
     <!-- Login Form Modal Content -->
-    <div id="loginForm" class="modal">
+    <div id="loginFormDiv" class="modal">
       <div class="modal-content">
         <span class="close-button" onclick="closeLoginForm()">&times;</span>
-        <form action="/login" method="post">
+        <form id="loginForm" method="post">
           <input type="text" name="username" placeholder="Username" required>
-          <input type="password" name="password" placeholder="Password" required>
-          <button type="button" onclick="openLoginForm()">Login</button>
+          <input type="password" name="password" placeholder="Password" required><br>
+          <button type="button" onclick="userLogin()">Login</button>
           <button type="button" onclick="openRegisterForm()">Create New Account</button>
         </form>
       </div>
     </div>
+
+    <!-- Register Form Modal Content -->
     <div id="registerForm" class="modal">
       <div class="modal-content">
         <span class="close-button" onclick="closeRegisterForm()">&times;</span>
-        <form action="/register" method="post">
+        <form id="registerNewUser" method="post">
           <input type="text" name="newUsername" id="newUsername" placeholder="Username" required>
           <input type="password" name="newPassword" id="newPassword" placeholder="Password" required>
-          <div class="buttonCreateNewAccount"><button type="button">Create Account</button></div>
-          </form>
+          <div class="buttonCreateNewAccount"><button type="button" onclick="registerNewUser()">Create Account</button></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- User Settings Modal Form -->
+    <div id="userSettingsForm" class="modal">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeUserSettingsForm()">&times;</span>
+        <form action="/changeSettings" method="post">
+
+        </form>
       </div>
     </div>
 
@@ -103,11 +121,15 @@
         <span class="close-button" onclick="closeTransactionForm()">&times;</span>
         <form action="/newTransactionOrExpense" method="post">
           <label for="amount">Amount:<input type="number" name="amount" id="amount" placeholder="0" required></label>
-          <br><label for="transactionType" id="transactionExpenseLabel">Type:
+          <br>Deposit<label class="switch">
+            <input type="checkbox" name="toggleTransactionExpense" id="toggleTransactionExpense" value="expense">
+            <span class="slider round"></span>
+          </label>Expense
+          <br><label for="transactionType" id="transactionExpenseLabel">Type:</label>
           <select id="transactionType" name="transactionType">
             <option value="work">Work</option>
             <option value="gift">Gift</option>
-            <option value="accountTransfer">Account Transfer</option>
+            <option value="account transfer">Account Transfer</option>
             <option value="other">Other</option>
           </select>
           <select id="expenseType" name="expenseType">
@@ -116,17 +138,15 @@
             <option value="bills">Bills</option>
             <option value="housing and accomodations">Housing</option>
             <option value="other">Other</option>
-          </select></label>
+          </select>
           <br><label for="account">Account:</label>
           <select id="account" name="account">
             {% for account in storedData["Accounts"] %}
             <option value='{{ account[0] }}'>{{ account[0] }}</option>
             {% endfor %}
           </select>
-          <br>Deposit<label class="switch">
-            <input type="checkbox" name="toggleTransactionExpense" id="toggleTransactionExpense" value="expense">
-            <span class="slider round"></span>
-          </label>Expense
+          <br><label for="date">Date: </label><input type="date" id="transactionDate" name="transactionDate">
+          <label for="time">Time: </label><input type="time" id="transactionTime" name="transactionTime">
           <br><button type="submit" id="submitTransactionExpense" style="background-color: lightgreen;" onclick="updateTotal()">+</button>
         </form>
       </div>
@@ -180,8 +200,12 @@
 
   deleteTransactionsToggled = false;
   trashcans = document.getElementsByClassName("trashcan")
+  const DateObj = new Date();
   window.onload = function(){
-    //openLoginForm();
+    {% if not session.username %}
+    openLoginForm();
+    {% endif %}
+    
     var transactionsAmount = {{ storedData["Transactions"] | length }};
     //const mainGrid = document.getElementById("TransactionsGrid");
     for(var x = 0; x < trashcans.length; x++){
@@ -189,8 +213,10 @@
       trashcans[x].addEventListener('click', function(event) {
         if (event.target.id=="t"){
           var deleteID = event.target.closest(".mainGridRowT").querySelector(".mainGridHiddenID").innerText;
+          var deleteType = "transactions"
         } else if (event.target.id=="e"){
           var deleteID = event.target.closest(".mainGridRowE").querySelector(".mainGridHiddenID").innerText;
+          var deleteType = "expenses"
         };
         fetch("/deleteDataByID", {
           method:"DELETE",
@@ -199,7 +225,7 @@
           },
           body: JSON.stringify({
             "id":deleteID,
-            "type":"transactions"})
+            "type":deleteType})
         })
         .then(response => {
           if(response.ok){
@@ -225,6 +251,48 @@
     }*/
   }
 
+  function userLogin(){
+    formData = new FormData(document.getElementById("loginForm"))
+    dataToSend = Object.fromEntries(formData.entries());
+    fetch('/login',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify(dataToSend)
+    })
+    .then(response=>response.json())
+    .then(json=>{
+      alert(json.message)
+      if(json.status == "error"){
+        alert(json.message)
+      } else{
+        location.reload()
+      }
+    })
+  }
+
+  function registerNewUser(){
+    formData = new FormData(document.getElementById("registerNewUser"))
+    dataToSend = Object.fromEntries(formData.entries());
+    fetch('/register',{
+      method:'POST',
+      headers: {
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify(dataToSend)
+    })
+    .then(response=>response.json())
+    .then(json => {
+      if(json.status === "error"){
+        alert(json.message)
+      } else{
+        alert("Account created successfully!")
+        location.reload()
+      }
+    })
+  }
+  
   function toggleDeleteTransactions(){
     if (deleteTransactionsToggled){
       closeDeleteTransactions()
@@ -259,10 +327,47 @@
   }
 
   function openLoginForm() {
-    document.getElementById("loginForm").style.display = "block";
+    document.getElementById("loginFormDiv").style.display = "block";
   }
 
   function openTransactionForm() {
+    let currentYear = DateObj.getFullYear()
+    // For some reason, .getMonth() returns one too low. Maybe incremented from zero? Either way, dumb. Just added one.
+    let currentMonth = DateObj.getMonth() + 1
+    let currentDay = DateObj.getDate()
+
+
+    currentDate = currentYear
+    
+
+    if (currentMonth < 10){
+      currentDate = currentDate + "-0" + currentMonth
+    } else {
+      currentDate =  currentDate + "-" + currentMonth
+    }
+
+    if (currentDay < 10){
+      currentDate = currentDate + "-0" + currentDay
+    } else {
+      currentDate = currentDate + "-" + currentDay
+    }
+
+    let currentHour = DateObj.getHours()
+    let currentMinute = DateObj.getMinutes()
+    let currentTime = ""
+    if (currentHour < 10){
+      currentTime = "0" + currentHour
+    } else {
+      currentTime = currentHour
+    }
+    if (currentMinute < 10){
+      currentTime = currentTime + ":0" + currentMinute
+    } else {
+      currentTime = currentTime + ":" + currentMinute
+    }
+    currentTime = currentTime + ":00"
+    document.getElementById("transactionDate").value = currentDate
+    document.getElementById("transactionTime").value = DateObj.getHours() + ":" + DateObj.getMinutes() + ":00"
     document.getElementById("toggleTransactionExpense").addEventListener('change', function() {
       if (this.checked){
         document.getElementById("transactionType").style.display = "none";
@@ -300,7 +405,7 @@
   }
 
   function closeLoginForm(){
-    document.getElementById("loginForm").style.display = "none";
+    document.getElementById("loginFormDiv").style.display = "none";
   }
 
   function openRegisterForm(){
@@ -316,10 +421,33 @@
     var sum = 0;
     for (var i = 0; i < rowAmounts.length; i++){
       var intValue = parseInt(rowAmounts[i].innerText, 10);
-      sum += intValue;
-    }
+      if(rowAmounts[i].id == "t"){
+        sum += intValue;
+      } else if (rowAmounts[i].id == "e"){
+        sum -= intValue;
+      }
 
+    }
     document.getElementById("mainGridTotalAmount").innerText = sum;
+  }
+
+  function logout(){
+    fetch('/logout',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+      },
+      body:JSON.stringify("Log out request")
+    })
+    .then(response=>response.json())
+    .then(json=>{
+      if(json.status==="error"){
+        alert("Error: ", json.message)
+      } else {
+        alert("Log out successful!")
+        location.reload()
+      }
+    })
   }
 
 </script>

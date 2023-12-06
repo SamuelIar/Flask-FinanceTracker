@@ -1,9 +1,9 @@
-from flask import Blueprint, jsonify, render_template, redirect, request, url_for
-from financesapp.auth import checkUserLogin, registerNewUser
+from flask import Blueprint, jsonify, render_template, redirect, request, session, url_for
+from financesapp import auth
 from financesapp import database_access
+from datetime import date
 
 mainRoutes = Blueprint('main', __name__)
-
 
 @mainRoutes.route('/Home')
 def home():
@@ -26,20 +26,24 @@ def home():
             "Datetime":""
         }]
     }'''
-    Accounts = database_access.retrieveAccounts()
-    Transactions = database_access.retrieveTransactions()
-    Expenses = database_access.retrieveExpenses()
-    print("Transactions Amount: ", len(Transactions))
-    print("Expenses amount: ", len(Expenses))
-
+    username = session.get("username")
+    #if(username is not None):
+    #    print("Username is not none!")
+    if(username is None):
+        Accounts = []
+        Transactions = []
+        Expenses = []
+    else:
+        Accounts = database_access.retrieveAccounts(username)
+        Transactions = database_access.retrieveTransactions(username)
+        Expenses = database_access.retrieveExpenses(username)
+        
     storedData = {
         "Accounts": Accounts,
         "Transactions": Transactions,
         "Expenses": Expenses,
         "TransactionsAndExpenses": Transactions + Expenses
     }
-    print("Stored Data:\n",storedData)
-    transactionsAndExpenses = {}
 
     return render_template("Home.html", storedData = storedData)
 
@@ -58,31 +62,56 @@ def index():
 
 @mainRoutes.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-    if checkUserLogin(username, password):
-        return
-    else:
-        return
+    
+    username = request.json['username']
+    password = request.json['password']
+    print("Attempted login username: ", username)
+    print("Attempted login password: ", password)
+    
+    authenticationSuccessful = database_access.authenticateUser(username, password)
+    print("Auth successful was ", authenticationSuccessful)
+
+    match authenticationSuccessful:
+        case 0:
+            session['username'] = username
+            return jsonify({'status':'success','message':'Login successful!'})
+        case 404 | 1 | _:
+            return jsonify({'status':'error','message':'We could not log you in with those credentials. Please try again.'})
+            
+
+    # Cleansing user input to prevent SQL insertion
+    #username = re.sub('r\W+', '', username)
+    #password = re.sub('r\W+', '', password)
+    #if(auth.authenticateUser(username, password)):
+    #    session['user']=username
+    #    redirect(url_for('main.home', username=username))
+    ##else()
+    #else:
+    #    return jsonify({"message":"Unauthorized"}), 401
 
 @mainRoutes.route('/register', methods=['POST'])
 def register():
     newUsername = request.json['newUsername']
     newPassword = request.json['newPassword']
-    registerNewUser = registerNewUser(newUsername, newPassword)
+    ### ADD USER INPUT SANITATION!!!
+    print("New Username", newUsername)
+    print("New Password", newPassword)
 
-    if registerNewUser == 0:
-        return jsonify({"available": True, "message": "Registration successful!"})
-    elif registerNewUser == 1:
-        return jsonify({"available": False, "message": "Username unavailable! Please try another username."})
+
+    registerNewUserSuccessful = database_access.registerNewUser(newUsername, newPassword)
+
+    if registerNewUserSuccessful == 0:
+        return jsonify({"status": "success", "message": "Registration successful!"})
+    elif registerNewUserSuccessful == 1:
+        return jsonify({"status": "error", "message": "Username unavailable! Please try another username."})
     else:
-        return jsonify({"available:": False, "message": "Unknown error."})
+        return jsonify({"status": "error", "message": "Unknown error."})
 
 @mainRoutes.route("/newTransactionOrExpense", methods=["POST"])
 def newTransactionOrExpense():
     account = request.form["account"]
     amount = request.form['amount']
+    datetime = request.form["transactionDate"] + " " + request.form["transactionTime"]
     transactionOrExpense = request.form.get("toggleTransactionExpense")
     if (transactionOrExpense == None): transactionOrExpense = "transaction"
     if (transactionOrExpense == "transaction"):
@@ -92,10 +121,12 @@ def newTransactionOrExpense():
     else:
         print("Error: Transaction or expense of type ", transactionOrExpense)
 
+    username = session.get("username")
+
     if transactionOrExpense == "transaction":
-        database_access.storeTransaction(account, amount, type)
+        database_access.storeTransaction(username, account, amount, type, datetime)
     elif transactionOrExpense == "expense":
-        database_access.storeExpense(account, amount, type)
+        database_access.storeExpense(username, account, amount, type, datetime)
     return redirect(url_for("main.home"))
 
 @mainRoutes.route("/newAccountFromHomePage", methods=["POST"])
@@ -107,21 +138,23 @@ def newAccountFromHomePage():
         initialBalance = 0
     else:
         initialBalance = int(initialBalance)
-    database_access.createNewAccount(name, type, initialBalance)
+    database_access.createNewAccount(name, type, initialBalance, session["username"])
     return redirect(url_for("main.home"))
 
 @mainRoutes.route("/deleteDataByID", methods=["DELETE"])
 def deleteDataByID():
     data = request.json
-    print("Got request to delete data by ID ", data["id"])
     deleteSuccessful = database_access.deleteDataByID(data["id"], data["type"])
-    print("Delete Successful: ", deleteSuccessful)
-    print("Delete Successful[1]: ", deleteSuccessful[1])
-    print(deleteSuccessful[1] == 200)
     if (deleteSuccessful[1] == 200):
-        print("In delete successful")
         return jsonify({"message":"Success"}),200
     else:
         print(deleteSuccessful)
         return "Error", 404
     
+@mainRoutes.route("/logout", methods=['POST'])
+def logout():
+    try:
+        session.pop('username', None)
+        return jsonify({"status": "success", "message": "Logged out successfully"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": e})
