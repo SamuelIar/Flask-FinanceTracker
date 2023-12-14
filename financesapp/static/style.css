@@ -4,7 +4,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 96vh;
-    background-color: #ffffff;
+    /*background-color: #ffffff;*/
     }
 
     header {
@@ -77,6 +77,12 @@ body {
     justify-content: space-between;
     margin: 5px;
     }
+
+.UserSettingsButton{
+    max-width: 60px;
+    max-height: 60px;
+    border: 1px solid black;
+}
 
 .superFlex{
     display: flex;
@@ -165,40 +171,41 @@ body {
 .trashcan{
     display: none;
     width: 20px;
-    height: 20px;
+    height: 18px;
+    background-color: transparent;
+    margin-left: 25%;
+    margin-right: 25%;
 }
 
-    .sidebar,
-    .settings {
+.sidebar, .settings {
     padding: 10px;
-    }
+}
     
-    .sidebar,
-    .settings {
+.sidebar, .settings {
     width: 20%;
     background-color: #ffffff;
-    }
+}
     
-    .content {
+.content {
     flex: 1;
     /* margin: 0 40px; */
-    }
+}
     
-    table {
+table {
     width: 100%;
     margin-top: 20px;
     table-layout: fixed;
     text-indent: center;
-    }
+}
     
-    .button-container {
+.button-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    }
+}
     
-    .button {
+.buttonMain {
     width: 250px;
     margin-top: 0%;
     color: rgb(255, 255, 255);
@@ -211,33 +218,33 @@ body {
     outline: none;
     cursor: pointer;
     /* margin: 5px; */
-    }
-    .button:hover{
+}
+
+.button:hover{
     background-color:rgb(65, 87, 96);
-    }
+}
     /* .button:visited{
     background-color:#785353;
     } */
     
-    th,
-    td {
+th, td {
     border: 1px solid #1c1919;
     padding: 8px;
     text-align: center;
     }
     
-    th {
+th {
     background-color: #f2f2f2;
-    }
+}
     
-    .footer {
+.footer {
     display: flex;
     justify-content: space-around;
     background-color: #f2f2f2;
     padding: 10px;
-    }
+}
     
-    .footer-button {
+.footer-button {
     color: rgb(255, 255, 255);
     font-size: 16px;
     padding: 30px;
@@ -247,11 +254,13 @@ body {
     outline: none;
     cursor: pointer;
     width: 33%;
-    }
-    .footer-button:hover{
+}
+
+.footer-button:hover{
     background-color: rgb(65, 87, 96);
-    }
-    /* #accountdetails.active{
+}
+
+/* #accountdetails.active{
         background-color: #785353;
         color: black;
     }

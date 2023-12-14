@@ -7,38 +7,30 @@ mainRoutes = Blueprint('main', __name__)
 
 @mainRoutes.route('/Home')
 def home():
-    
-    # storedData Dictionaty Structure
-    '''storedData = {
-        "Accounts":[{
-            "AccountName":"",
-            "accountType":"",
-            "AccountBalance":0,
-        }, ],
-        "Transactions":[{
-            "Amount":0,
-            "Type":"",
-            "Datetime":""
-        }],
-        "Expenses":[{
-            "Amount":0,
-            "Type":"",
-            "Datetime":""
-        }]
-    }'''
+   
     username = session.get("username")
     #if(username is not None):
     #    print("Username is not none!")
     if(username is None):
+        User = []
         Accounts = []
         Transactions = []
         Expenses = []
     else:
-        Accounts = database_access.retrieveAccounts(username)
-        Transactions = database_access.retrieveTransactions(username)
-        Expenses = database_access.retrieveExpenses(username)
-        
+        try:
+            User = database_access.retrieveUserData(username)
+            Accounts = database_access.retrieveAccounts(username)
+            Transactions = database_access.retrieveTransactions(username)
+            Expenses = database_access.retrieveExpenses(username)
+        except IndexError:
+            session.pop("username")
+            User = []
+            Accounts = []
+            Transactions = []
+            Expenses = []
+
     storedData = {
+        "User": User,
         "Accounts": Accounts,
         "Transactions": Transactions,
         "Expenses": Expenses,
@@ -65,11 +57,8 @@ def login():
     
     username = request.json['username']
     password = request.json['password']
-    print("Attempted login username: ", username)
-    print("Attempted login password: ", password)
     
     authenticationSuccessful = database_access.authenticateUser(username, password)
-    print("Auth successful was ", authenticationSuccessful)
 
     match authenticationSuccessful:
         case 0:
@@ -106,6 +95,19 @@ def register():
         return jsonify({"status": "error", "message": "Username unavailable! Please try another username."})
     else:
         return jsonify({"status": "error", "message": "Unknown error."})
+
+@mainRoutes.route('/updateUserSettings', methods=['POST'])
+def updateUserSettings():
+    timeframe = request.form["homeTimeframe"]
+    displayColorPrimary = request.form["displayColorPrimary"]
+    displayColorSecondary = request.form["displayColorSecondary"]
+
+    database_access.updateUserData(session["username"], timeframe, displayColorPrimary, displayColorSecondary)
+    print("Timeframe: ", timeframe)
+    print("displayColorPrimary: ", displayColorPrimary)
+    print("displayColorSecondary: ", displayColorSecondary)
+
+    return redirect(url_for("main.home"))
 
 @mainRoutes.route("/newTransactionOrExpense", methods=["POST"])
 def newTransactionOrExpense():

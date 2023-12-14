@@ -4,49 +4,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="../static/style.css">
     <title>Finance Tracker</title>
-    <script>
-        window.onload = function () {
-            // Get all the amount cells
-            var amountCells = document.querySelectorAll('td:nth-child(2)');
-
-            // Calculate the total
-            var total = 0;
-            amountCells.forEach(function (cell) {
-                var amount = parseFloat(cell.textContent.replace('$', '')) || 0;
-                total += amount;
-            });
-
-            // Display the total in the last row of the table
-            var totalCell = document.querySelector('tr:last-child td:last-child');
-            totalCell.textContent = '$' + total.toFixed(2);
-        }; 
-           // display toggle menu
-        function toggleMenu() {
-        var dropdownMenu = document.getElementById('dropdownMenu');
-        dropdownMenu.style.display = (dropdownMenu.style.display === 'block') ? 'none' : 'block';
-}
-
-    </script>
-    <header>
-            <div class="menu-button" onclick="toggleMenu()" >
-                <div class="line"></div>
-                <div class="line"></div>
-                <div class="line"></div>
-            </div>
-            <h1>Finance Tracker</h1>
-            <div class="dropdown-menu" id="dropdownMenu">
-                <button class="dropdown-item" onclick="location.href=''">Account1</button>
-                <button class="dropdown-item" onclick="location.href=''">Account2</button>
-            </div>
-    </header>
 </head>
 
 <body>
+    <header>
+            <!-- User Settings Button -->
+            <div class="userSettingsButton" onclick="openUserSettings()">
+              <img src="../static/images/settingsgear.png" alt="User Settings" class="UserSettingsButton">
+            </div>
+            <h1 id="styleColorSecondary">Finance Tracker</h1>
+    </header>
     <div class="container">
-        <div class="sidebar">
+        <div class="sidebar" id="leftsideBar">
             <div class="button-container">
-                <h5><button class="button" type="button" onclick="openAccountForm()">+Account</button></h5>
-                <h5><button class="button" type="button" onclick="location.href='settings.html'">Settings</button></h5>
+                <h5><button class="buttonMain" type="button" onclick="openAccountForm()">+Account</button></h5>
             </div>
         </div>
 
@@ -59,7 +30,8 @@
             {% endif %}
           {% endfor %}
         </div>
-        <div class="settings">
+
+        <div class="settings" id="rightsideBar">
             <div class="button-container">
                 {% if 'username' in session %}
                 <button type="button" onclick="logout()">Log Out</button>
@@ -67,16 +39,16 @@
                 <button type="button" onclick="openLoginForm()">Login</button>
                 <button type="button" onclick="openRegisterForm()">Register</button>
                 {% endif %}
-                <h5><button class="button" type="button" onclick="toggleDeleteTransactions()">-Transaction</button></h5>
-                <h5><button class="button" type="button" onclick="openTransactionForm()">+Transaction</button></h5>
+                <h5><button class="buttonMain" type="button" onclick="toggleDeleteTransactions()">-Transaction</button></h5>
+                <h5><button class="buttonMain" type="button" onclick="openTransactionForm()">+Transaction</button></h5>
             </div>
         </div>
     </div>
 
-    <div class="footer">
-        <button class="footer-button" type="button" onclick="location.href='accountdetails.html'" id="accountdetails" >Account Details</button>
-        <button class="footer-button" type="button" onclick="location.href='balanceoverview.html'" id="balanceoverview" >Balance Overview</button>
-        <button class="footer-button" type="button" onclick="location.href='graphicaloverview.html'" id="graphicaloverview" >Graphical Overview</button>
+    <div class="footer" id="footer">
+        <button class="footer-button buttonMain" type="button" onclick="location.href='/Accounts'" id="accountdetails" >Account Details</button>
+        <button class="footer-button buttonMain" type="button" onclick="location.href='/Home'" id="balanceoverview" >Balance Overview</button>
+        <button class="footer-button buttonMain" type="button" onclick="location.href='/Graphs'" id="graphicaloverview" >Graphical Overview</button>
     </div>
 
 
@@ -109,8 +81,20 @@
     <div id="userSettingsForm" class="modal">
       <div class="modal-content">
         <span class="close-button" onclick="closeUserSettingsForm()">&times;</span>
-        <form action="/changeSettings" method="post">
-
+        <form action="/updateUserSettings" method="post">
+          User Settings Form
+          <label for="homeTimeframe">Home Timeframe: </label>
+          <select id="homeTimeframe" name="homeTimeframe">
+            <option value="daily"{% if storedData['User']['homeTimeframe'] == 'daily' %} selected{% endif %}>Daily</option>
+            <option value="weekly"{% if storedData['User']['homeTimeframe'] == 'weekly' %} selected{% endif %}>Weekly</option>
+            <option value="monthly"{% if storedData['User']['homeTimeframe'] == 'monthly' %} selected{% endif %}>Monthly</option>
+          </select><br>
+          <label for="displayColorPrimary">Primary Display Color:</label>
+          <input type="color" id="displayColorPrimary" name="displayColorPrimary" value="{{ storedData['User']['displayColorPrimary'] }}"><br>
+          <label for="displayColorSecondary">Secondary Display Color:</label>
+          <input type="color" id="displayColorSecondary" name="displayColorSecondary" value="{{ storedData['User']['displayColorSecondary'] }}"><br>
+        <button type="submit">Apply</button>
+        <button type="button" onclick="closeUserSettingsForm()">Cancel</button>
         </form>
       </div>
     </div>
@@ -174,34 +158,20 @@
 
 </body>
 <script>
-  /*$(document).ready(function(){
-    $("#registerForm").submit(function(event){
-      event.preventDefault();
-      var username = $("#newUsername").val();
-      var password = $("#newPassword").val();
-      $.ajax({
-        url: '/register',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({newUsername: username, newPassword: password}),
-        success: function(response){
-          if(response.available){
-            alert(response.message);
-            closeRegisterForm();
-            window.location.href="/";
-          } else {
-            alert(response.message);
-          }
-        }
-      });
-    });
-    openLoginForm();
-  });*/
-
   deleteTransactionsToggled = false;
   trashcans = document.getElementsByClassName("trashcan")
   const DateObj = new Date();
+  
   window.onload = function(){
+    document.body.style.backgroundColor = "{{ storedData['User']['displayColorPrimary'] }}";
+    document.getElementById("leftsideBar").style.backgroundColor = "{{ storedData['User']['displayColorPrimary'] }}";
+    document.getElementById("rightsideBar").style.backgroundColor = "{{ storedData['User']['displayColorPrimary'] }}";
+    document.getElementById("footer").style.backgroundColor = "{{ storedData['User']['displayColorPrimary'] }}";
+    document.getElementById("styleColorSecondary").style.borderColor = "{{ storedData['User']['displayColorSecondary'] }}";
+    var buttons = document.getElementsByClassName("buttonMain");
+    for(var x = 0; x < buttons.length; x++){
+      buttons[x].style.backgroundColor = "{{ storedData['User']['displayColorSecondary'] }}"
+    }
     {% if not session.username %}
     openLoginForm();
     {% endif %}
@@ -312,6 +282,14 @@
     for(var x = 0; x < trashcans.length; x++){
       trashcans[x].style.display="none";
     }
+  }
+
+  function openUserSettings(){
+    document.getElementById("userSettingsForm").style.display="block";
+  }
+
+  function closeUserSettingsForm(){
+    document.getElementById("userSettingsForm").style.display="none";
   }
 
   function makeTypeRow(Data){

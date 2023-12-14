@@ -50,6 +50,30 @@ def storeExpense(user, account, amount, type, datetime):
         }]
     }'''
 
+def retrieveUserData(username):
+    if(username == None): return []
+
+    with psycopg2.connect(**userDatabase) as conn:
+        with conn.cursor() as cur:
+            query = sql.SQL("SELECT username, hometimeframe, primarycolor, secondarycolor FROM useraccounts WHERE username = %s;")
+            cur.execute(query, (username,))
+            queryResults = cur.fetchall()[0]
+            returnResults = {
+                "Username":queryResults[0],
+                "homeTimeframe":queryResults[1],
+                "displayColorPrimary":queryResults[2],
+                "displayColorSecondary":queryResults[3]
+            }
+            print("Query Results: ",returnResults)
+            return returnResults
+
+def updateUserData(username, homeTimeFrame, primaryColor, secondaryColor):
+    with psycopg2.connect(**userDatabase) as conn:
+        with conn.cursor() as cur:
+            query = sql.SQL("UPDATE useraccounts SET hometimeframe = %s, primarycolor = %s, secondarycolor = %s WHERE username = %s;")
+            cur.execute(query, (homeTimeFrame, primaryColor, secondaryColor, username))
+                
+
 def retrieveAccounts(username):
     # If no user logged in, return no data
     if(username == None): return []

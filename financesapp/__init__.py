@@ -105,8 +105,7 @@ def userAccountsCheck(cursor):
     cursor.execute("SELECT EXISTS(SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'useraccounts')")
     tableExists = cursor.fetchone()[0]
     if not tableExists:
-        cursor.execute("CREATE TYPE timeframe AS ENUM('daily', 'weekly', 'bi-weekly', 'monthly');")
-        cursor.execute("CREATE TABLE UserAccounts (userID SERIAL PRIMARY KEY, userName VARCHAR(24), password varchar(24), homeTimeframe timeframe DEFAULT 'weekly', backgroundColor CHAR(6) DEFAULT 'c8e6d1', complimentColor CHAR(6) DEFAULT '2c2e2d')")
+        cursor.execute("CREATE TABLE UserAccounts (userID SERIAL PRIMARY KEY, userName VARCHAR(24), password varchar(24), homeTimeframe timeframe DEFAULT 'weekly', primaryColor CHAR(7) DEFAULT '#c8e6d1', secondaryColor CHAR(7) DEFAULT '#2c2e2d')")
 
 def accountsCheck(cursor):
     
@@ -122,7 +121,6 @@ def transactionsCheck(cursor):
     tableExists = cursor.fetchone()[0]
 
     if not tableExists:
-        cursor.execute("CREATE TYPE transactionType AS ENUM('work', 'gift', 'account transfer', 'other');")
         cursor.execute("CREATE TABLE Transactions(transactionID SERIAL PRIMARY KEY, accountID INTEGER REFERENCES Accounts(accountID), amount INT, type transactionType DEFAULT 'other', datetime TIMESTAMP)")
 
 def expensesCheck(cursor):
@@ -130,5 +128,4 @@ def expensesCheck(cursor):
     tableExists = cursor.fetchone()[0]
 
     if not tableExists:
-        cursor.execute("CREATE TYPE expenseType AS ENUM('other', 'food', 'gas', 'bills', 'housing and accomodations');")
         cursor.execute("CREATE TABLE Expenses(expenseID SERIAL PRIMARY KEY, accountID INTEGER REFERENCES Accounts(accountID), amount INT, type expenseType DEFAULT 'other', datetime TIMESTAMP)")
